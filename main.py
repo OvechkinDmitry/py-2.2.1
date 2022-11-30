@@ -1,6 +1,7 @@
 import taskTables
 import taskStatistics
-#изменение один 
+#изменение из develop
+>>>>>>> develop
 dataInput = input("Введите данные для печати:")
 
 if dataInput == 'Вакансии':
