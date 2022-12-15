@@ -9,7 +9,6 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles.numbers import FORMAT_PERCENTAGE_00
 from jinja2 import Environment, FileSystemLoader
 import pdfkit
-import cProfile
 import doctest
 
 currency_to_rub = {"AZN": 35.68,
@@ -602,15 +601,12 @@ class report:
 
 
 def getStatistics():
-    # file_name = input("Введите название файла: ")
-    # profession = input("Введите название профессии: ")
-    # dataset = DataSet(file_name, profession)
-    dataset = DataSet("vacancies.csv", "Аналитик")
+    file_name = input("Введите название файла: ")
+    profession = input("Введите название профессии: ")
+    dataset = DataSet(file_name, profession)
     dataset.print_result()
-    # report(dataset).generate_pdf()
+    report(dataset).generate_pdf()
 
 
 # getStatistics()
-
-cProfile.run('getStatistics()')
 # doctest.testmod()
