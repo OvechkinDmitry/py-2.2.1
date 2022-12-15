@@ -1,4 +1,5 @@
 import csv
+import datetime
 from operator import itemgetter
 import openpyxl
 import numpy as np
@@ -8,6 +9,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles.numbers import FORMAT_PERCENTAGE_00
 from jinja2 import Environment, FileSystemLoader
 import pdfkit
+import cProfile
 import doctest
 
 currency_to_rub = {"AZN": 35.68,
@@ -23,21 +25,21 @@ currency_to_rub = {"AZN": 35.68,
 
 
 def take_first_ten(dictionary):
-    """
-        Функция возвращающая первые десять элемнтов словаря
-        Parameters:
-                   dictionary (dict): словарь
-        Returns:
-                  (dict): новый словарь из 10 элементов
-        >>> take_first_ten({'Казань': 156337, 'Москва': 142291, 'Санкт-Петербург': 111548, 'Уфа': 106750, 'Екатеринбург': 95270, 'Владивосток': 87916, 'Набережные Челны': 81142, 'Иркутск': 80357, 'Нижний Новгород': 74437, 'Краснодар': 70402, 'Ростов-на-Дону': 68961, 'Хабаровск': 62800, 'Алматы': 61152, 'Тюмень': 59900, 'Ижевск': 58200, 'Красноярск': 57833, 'Новосибирск': 56958, 'Пермь': 55888, 'Челябинск': 52402, 'Томск': 46225, 'Минск': 45560})
-        {'Казань': 156337, 'Москва': 142291, 'Санкт-Петербург': 111548, 'Уфа': 106750, 'Екатеринбург': 95270, 'Владивосток': 87916, 'Набережные Челны': 81142, 'Иркутск': 80357, 'Нижний Новгород': 74437, 'Краснодар': 70402}
-
-        >>> take_first_ten({'Казань': 156337, 'Москва': 142291, 'Санкт-Петербург': 111548, 'Уфа': 106750})
-        {'Казань': 156337, 'Москва': 142291, 'Санкт-Петербург': 111548, 'Уфа': 106750}
-
-        >>> take_first_ten({})
-        {}
-    """
+    # """
+    #     Функция возвращающая первые десять элемнтов словаря
+    #     Parameters:
+    #                dictionary (dict): словарь
+    #     Returns:
+    #               (dict): новый словарь из 10 элементов
+    #     >>> take_first_ten({'Казань': 156337, 'Москва': 142291, 'Санкт-Петербург': 111548, 'Уфа': 106750, 'Екатеринбург': 95270, 'Владивосток': 87916, 'Набережные Челны': 81142, 'Иркутск': 80357, 'Нижний Новгород': 74437, 'Краснодар': 70402, 'Ростов-на-Дону': 68961, 'Хабаровск': 62800, 'Алматы': 61152, 'Тюмень': 59900, 'Ижевск': 58200, 'Красноярск': 57833, 'Новосибирск': 56958, 'Пермь': 55888, 'Челябинск': 52402, 'Томск': 46225, 'Минск': 45560})
+    #     {'Казань': 156337, 'Москва': 142291, 'Санкт-Петербург': 111548, 'Уфа': 106750, 'Екатеринбург': 95270, 'Владивосток': 87916, 'Набережные Челны': 81142, 'Иркутск': 80357, 'Нижний Новгород': 74437, 'Краснодар': 70402}
+    #
+    #     >>> take_first_ten({'Казань': 156337, 'Москва': 142291, 'Санкт-Петербург': 111548, 'Уфа': 106750})
+    #     {'Казань': 156337, 'Москва': 142291, 'Санкт-Петербург': 111548, 'Уфа': 106750}
+    #
+    #     >>> take_first_ten({})
+    #     {}
+    # """
     new_dictionary = {}
     i = 0
     for key in dictionary:
@@ -46,6 +48,35 @@ def take_first_ten(dictionary):
         if i == 10: break
     return new_dictionary
 
+# def format_year_1(date):
+#     """Функция для форматирования года
+#         Args:
+#             date (str): дата в виде строки
+#         Returns:
+#             str: отформатированная дата
+#     """
+#     date = datetime.datetime.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
+#     return date.year
+
+
+# def format_year_2(date):
+#     """Функция для форматирования года
+#         Args:
+#             date (str): дата в виде строки
+#         Returns:
+#             str: отформатированная дата
+#     """
+#     date = date.split('-')[0]
+#     return date
+
+def format_year_3(date):
+    """Функция для форматирования года
+        Args:
+            date (str): дата в виде строки
+        Returns:
+            str: отформатированная дата
+    """
+    return date[:4]
 
 class Vacancy:
     '''
@@ -55,28 +86,29 @@ class Vacancy:
         '''
 
     def __init__(self, dictionary):
-        '''
-            Инициализирует объект вакансии. Выполняет структурирование информации о вакансии
-            Attributes:
-                    dictionary (dict): словарь с данными о вакансии
-
-            >>> Vacancy({'name': '','salary_from': '26000.0', 'salary_to': '35000.0','salary_currency': 'RUR', 'area_name': '', 'published_at': '2022'}).salary
-            30500.0
-
-            >>> Vacancy({'name': '','salary_from': '0', 'salary_to': '0','salary_currency': 'RUR', 'area_name': '', 'published_at': '2022'}).published_at
-            2022
-
-            >>> Vacancy({'name': '','salary_from': '0', 'salary_to': '0','salary_currency': 'RUR', 'area_name': 'Краснотурьинск', 'published_at': '2022'}).area_name
-            'Краснотурьинск'
-
-            >>> Vacancy({'name': 'Техник по связи г. Краснотурьинск','salary_from': '0', 'salary_to': '0','salary_currency': 'RUR', 'area_name': '', 'published_at': '2022'}).name
-            'Техник по связи г. Краснотурьинск'
-        '''
+        # '''
+        #     Инициализирует объект вакансии. Выполняет структурирование информации о вакансии
+        #     Attributes:
+        #             dictionary (dict): словарь с данными о вакансии
+        #
+        #     >>> Vacancy({'name': '','salary_from': '26000.0', 'salary_to': '35000.0','salary_currency': 'RUR', 'area_name': '', 'published_at': '2022'}).salary
+        #     30500.0
+        #
+        #     >>> Vacancy({'name': '','salary_from': '0', 'salary_to': '0','salary_currency': 'RUR', 'area_name': '', 'published_at': '2022'}).published_at
+        #     2022
+        #
+        #     >>> Vacancy({'name': '','salary_from': '0', 'salary_to': '0','salary_currency': 'RUR', 'area_name': 'Краснотурьинск', 'published_at': '2022'}).area_name
+        #     'Краснотурьинск'
+        #
+        #     >>> Vacancy({'name': 'Техник по связи г. Краснотурьинск','salary_from': '0', 'salary_to': '0','salary_currency': 'RUR', 'area_name': '', 'published_at': '2022'}).name
+        #     'Техник по связи г. Краснотурьинск'
+        # '''
         self.name = dictionary["name"]
         self.salary = (float(dictionary["salary_from"]) + float(dictionary["salary_to"])) / 2 * currency_to_rub[
             dictionary["salary_currency"]]
         self.area_name = dictionary["area_name"]
-        self.published_at = int(dictionary["published_at"][:4])
+        self.published_at = int(format_year_3(dictionary["published_at"]))
+        # self.published_at = int(dictionary["published_at"][:4])
 
 
 class DataSet:
@@ -192,23 +224,23 @@ class DataSet:
 
     @staticmethod
     def get_vacancies_amount_at_times(publised_list):
-        """Вычисляет кол-во вакансий относительно года
-            Args:
-                publised_list (list): лист с датами публикаций
-            Returns:
-                      (dict): отсоритованный относительно года словарь с кол-вом вакансий
-           >>> DataSet.get_vacancies_amount_at_times([2022,2019,2022,2021])
-           {2019: 1, 2021: 1, 2022: 2}
-
-           >>> DataSet.get_vacancies_amount_at_times([2022,2022,2022,2022])
-           {2022: 4}
-
-           >>> DataSet.get_vacancies_amount_at_times([2007,2010,2007,2001,2005,1992,1999])
-           {1992: 1, 1999: 1, 2001: 1, 2005: 1, 2007: 2, 2010: 1}
-
-           >>> DataSet.get_vacancies_amount_at_times([])
-           {}
-        """
+        # """Вычисляет кол-во вакансий относительно года
+        #     Args:
+        #         publised_list (list): лист с датами публикаций
+        #     Returns:
+        #               (dict): отсоритованный относительно года словарь с кол-вом вакансий
+        #    >>> DataSet.get_vacancies_amount_at_times([2022,2019,2022,2021])
+        #    {2019: 1, 2021: 1, 2022: 2}
+        #
+        #    >>> DataSet.get_vacancies_amount_at_times([2022,2022,2022,2022])
+        #    {2022: 4}
+        #
+        #    >>> DataSet.get_vacancies_amount_at_times([2007,2010,2007,2001,2005,1992,1999])
+        #    {1992: 1, 1999: 1, 2001: 1, 2005: 1, 2007: 2, 2010: 1}
+        #
+        #    >>> DataSet.get_vacancies_amount_at_times([])
+        #    {}
+        # """
         dictionary = {}
         for data in publised_list:
             if data in dictionary:
@@ -236,25 +268,25 @@ class DataSet:
         return dictionary if len(dictionary) != 0 else {2022: 0}
 
     def get_vacancies_amount_at_times_for_profession(self, list_vacancies):
-        """Вычисляет кол-во вакансий относительно года по выбранной профессии
-            Args:
-                list_vacancies (list): лист с объектами-словарями
-
-           Returns:
-              (dict): отсоритованный относительно года словарь с кол-вом вакансий по выбранной профессии
-
-           >>> dicts = [{'name': 'Механик','published_at': 2022},{'name': 'Аналитик','published_at': 2022} ,{'name': 'Аналитик','published_at': 2020}]
-           >>> DataSet('vacancies.csv','Аналитик').get_vacancies_amount_at_times_for_profession(dicts)
-           {2020: 1, 2022: 1}
-
-           >>> dicts = [{'name': 'Аналитик','published_at': 2022},{'name': 'Аналитик','published_at': 2022} ,{'name': 'Аналитик','published_at': 2020}]
-           >>> DataSet('vacancies.csv','Аналитик').get_vacancies_amount_at_times_for_profession(dicts)
-           {2020: 1, 2022: 2}
-
-           >>> dicts = []
-           >>> DataSet('vacancies.csv','Аналитик').get_vacancies_amount_at_times_for_profession(dicts)
-           {2022: 0}
-        """
+        # """Вычисляет кол-во вакансий относительно года по выбранной профессии
+        #     Args:
+        #         list_vacancies (list): лист с объектами-словарями
+        #
+        #    Returns:
+        #       (dict): отсоритованный относительно года словарь с кол-вом вакансий по выбранной профессии
+        #
+        #    >>> dicts = [{'name': 'Механик','published_at': 2022},{'name': 'Аналитик','published_at': 2022} ,{'name': 'Аналитик','published_at': 2020}]
+        #    >>> DataSet('vacancies.csv','Аналитик').get_vacancies_amount_at_times_for_profession(dicts)
+        #    {2020: 1, 2022: 1}
+        #
+        #    >>> dicts = [{'name': 'Аналитик','published_at': 2022},{'name': 'Аналитик','published_at': 2022} ,{'name': 'Аналитик','published_at': 2020}]
+        #    >>> DataSet('vacancies.csv','Аналитик').get_vacancies_amount_at_times_for_profession(dicts)
+        #    {2020: 1, 2022: 2}
+        #
+        #    >>> dicts = []
+        #    >>> DataSet('vacancies.csv','Аналитик').get_vacancies_amount_at_times_for_profession(dicts)
+        #    {2022: 0}
+        # """
         dictionary = {}
         for vacancy in list_vacancies:
             if self.profession not in vacancy['name']:
@@ -267,27 +299,27 @@ class DataSet:
         return dictionary if len(dictionary) != 0 else {2022: 0}
 
     def get_vacancies_amount_in_cities(self, vacancies_dicts):
-        """Вычисляет кол-во вакансий по городам
-           Args:
-                vacancies_dicts (list): лист с объектами-словарями
-           Returns:
-                   (dict): словарь с кол-вом вакансий по городам
-           >>> dicts = [{'area_name': 'МСК'},{'area_name': 'МСК'},{'area_name': 'МСК'}]
-           >>> DataSet('vacancies.csv', 'Аналитик').get_vacancies_amount_in_cities(dicts)
-           {'МСК': 3}
-
-           >>> dicts = [{'area_name': 'МСК'},{'area_name': 'СПБ'},{'area_name': 'СПБ'}]
-           >>> DataSet('vacancies.csv', 'Аналитик').get_vacancies_amount_in_cities(dicts)
-           {'МСК': 1, 'СПБ': 2}
-
-           >>> dicts = [{'area_name': 'МСК'},{'area_name': 'ЕКБ'},{'area_name': 'СПБ'}]
-           >>> DataSet('vacancies.csv', 'Аналитик').get_vacancies_amount_in_cities(dicts)
-           {'МСК': 1, 'ЕКБ': 1, 'СПБ': 1}
-
-           >>> dicts = []
-           >>> DataSet('vacancies.csv', 'Аналитик').get_vacancies_amount_in_cities(dicts)
-           {}
-        """
+        # """Вычисляет кол-во вакансий по городам
+        #    Args:
+        #         vacancies_dicts (list): лист с объектами-словарями
+        #    Returns:
+        #            (dict): словарь с кол-вом вакансий по городам
+        #    >>> dicts = [{'area_name': 'МСК'},{'area_name': 'МСК'},{'area_name': 'МСК'}]
+        #    >>> DataSet('vacancies.csv', 'Аналитик').get_vacancies_amount_in_cities(dicts)
+        #    {'МСК': 3}
+        #
+        #    >>> dicts = [{'area_name': 'МСК'},{'area_name': 'СПБ'},{'area_name': 'СПБ'}]
+        #    >>> DataSet('vacancies.csv', 'Аналитик').get_vacancies_amount_in_cities(dicts)
+        #    {'МСК': 1, 'СПБ': 2}
+        #
+        #    >>> dicts = [{'area_name': 'МСК'},{'area_name': 'ЕКБ'},{'area_name': 'СПБ'}]
+        #    >>> DataSet('vacancies.csv', 'Аналитик').get_vacancies_amount_in_cities(dicts)
+        #    {'МСК': 1, 'ЕКБ': 1, 'СПБ': 1}
+        #
+        #    >>> dicts = []
+        #    >>> DataSet('vacancies.csv', 'Аналитик').get_vacancies_amount_in_cities(dicts)
+        #    {}
+        # """
         dictionary = {}
         for vacancy in vacancies_dicts:
             if vacancy['area_name'] not in dictionary:
@@ -570,12 +602,15 @@ class report:
 
 
 def getStatistics():
-    file_name = input("Введите название файла: ")
-    profession = input("Введите название профессии: ")
-    dataset = DataSet(file_name, profession)
+    # file_name = input("Введите название файла: ")
+    # profession = input("Введите название профессии: ")
+    # dataset = DataSet(file_name, profession)
+    dataset = DataSet("vacancies.csv", "Аналитик")
     dataset.print_result()
-    report(dataset).generate_pdf()
+    # report(dataset).generate_pdf()
 
 
 # getStatistics()
-doctest.testmod()
+
+cProfile.run('getStatistics()')
+# doctest.testmod()
