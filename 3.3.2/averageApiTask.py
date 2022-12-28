@@ -29,8 +29,6 @@ class SalaryConverter:
         for index, row in self.csv_file.iterrows():
             salary_from, salary_to, value_curr = row["salary_from"], row["salary_to"], row["salary_currency"]
             print(type(salary_to))
-            if len(frame_data['name']) >= 100:
-                break
             if not np.isnan(salary_from) or not np.isnan(salary_to) and value_curr in self.currencies:
                 coefficient = float(
                         *self.csv_currencies[self.csv_currencies["date"] == row["published_at"][:7]][value_curr].values)\
