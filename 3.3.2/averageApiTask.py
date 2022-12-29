@@ -12,7 +12,7 @@ class SalaryConverter:
         csv_file (DataFrame): все данные из csv-файла
         data (dict): данные для формирования итогового отформатированного csv-файла
     """
-    def __init__(self,file_name):
+    def __init__(self, file_name: str):
         """Инициализирует класс Converter
         Args:
             file_name (string): название csv_file для дальнейшего редактирования
@@ -28,7 +28,6 @@ class SalaryConverter:
         frame_data = {"name": [], "salary": [], "area_name": [], "published_at": []}
         for index, row in self.csv_file.iterrows():
             salary_from, salary_to, value_curr = row["salary_from"], row["salary_to"], row["salary_currency"]
-            print(type(salary_to))
             if not np.isnan(salary_from) or not np.isnan(salary_to) and value_curr in self.currencies:
                 coefficient = float(
                         *self.csv_currencies[self.csv_currencies["date"] == row["published_at"][:7]][value_curr].values)\

@@ -30,7 +30,6 @@ class GetterVacanciesHH:
                             break
                     except:
                         continue
-                print(page)
                 for item in response["items"]:
                     self.dict_vacancies['name'].append(item["name"])
                     salary = item['salary']
